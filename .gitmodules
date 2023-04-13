@@ -1,0 +1,6 @@
+[submodule "lib/curlcppnx"]
+	path = lib/curlcppnx
+	url = https://github.com/chromabox/curlcppnx
+[submodule "lib/picojson"]
+	path = lib/picojson
+	url = https://github.com/kazuho/picojson.git

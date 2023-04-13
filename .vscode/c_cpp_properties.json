@@ -1,0 +1,26 @@
+{
+    "configurations": [
+        {
+            "name": "main",
+            "defines": [
+                "DEBUG"
+            ],
+            "compilerArgs": [
+                "-std=gnu++20"
+            ],
+            "includePath": [
+                "./include",
+                "./lib/curlcppnx/include",
+                "./lib/picojson"
+            ],
+            "cppStandard": "${default}",
+            "intelliSenseMode": "${default}",
+            "browse": {
+                "databaseFilename": "${workspaceFolder}/.vscode/browse.out",
+                "limitSymbolsToIncludedHeaders": false,
+                "path":["${workspaceFolder}"]
+            }
+		}
+	],
+    "version": 4
+}

@@ -3,7 +3,7 @@
 //
 // The MIT License (MIT)
 //
-// Copyright (c) <2014> chromabox <chromarockjp@gmail.com>
+// Copyright (c) <2023> chromabox <chromarockjp@gmail.com>
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,53 +23,53 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
 #include <vector>
 #include <string>
-#include <getopt.h>
-#include <unistd.h>
 
-#include "http/httpcurl.hpp"
-#include "include/picojson.h"
+#include "curl_easy.h"
+#include "curl_utility.h"
+#include "picojson.h"
 
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
+using curl::curl_ios;
+using curl::curl_easy;
+using curl::curl_easy_exception;
+using curl::curl_utility;
+using curl::curlcpp_traceback;
 
-using namespace std;
+using std::string;
+using std::ostringstream;
+using std::string_view;
+using namespace std::literals::string_view_literals;
+
+
+
 
 // バージョン
-static const string THIS_VERSION	= "0.0.1";
+static std::string_view THIS_VERSION = "0.0.1"sv;
 
 // レート取得用URL。外為オンラインのを使う
-static const std::string	RATE_URL	= "http://www.gaitameonline.com/rateaj/getrate";
-
+static std::string_view RATE_URL ="https://www.gaitameonline.com/rateaj/getrate"sv;
 
 // JSONの解析をする
-bool parseJson(const string &src,picojson::array &jarray)
+static bool parseJson(const string &src,picojson::array &jarray)
 {
 	picojson::value jsonval;	
 	string json_err;
 	
 	picojson::parse(jsonval,src.begin(),src.end(),&json_err);
 	if(!json_err.empty()){
-		cout << "[JSON] parse err!!! " << endl;
-		cout << json_err << endl;
-		cout << src << endl;
+		std::cout << "[JSON] parse err!!! " << std::endl;
+		std::cout << json_err << std::endl;
+		std::cout << src << std::endl;
 		return false;
 	}
 	if(!jsonval.is<picojson::object>()){
-		cout << "[JSON] is not object... " << endl;
+		std::cout << "[JSON] is not object... " << std::endl;
 		return false;
 	}
 	picojson::object jobj = jsonval.get<picojson::object>();
 	if(! jobj["quotes"].is<picojson::array>()){
-		cout << "[JSON] is not array... " << endl;
+		std::cout << "[JSON] is not array... " << std::endl;
 		return false;
 	}
 	jarray = jobj["quotes"].get<picojson::array>();
@@ -77,30 +77,38 @@ bool parseJson(const string &src,picojson::array &jarray)
 }
 
 // USD/JPYの為替レートを取得
-bool readRate(picojson::object &rateobj)
+static bool readRate(picojson::object &rateobj)
 {
-	HTTPCurl peer;
-	picojson::array jarray;
+	ostringstream stream;
+	curl_ios<ostringstream> ios(stream);
+	curl_easy peer(ios);
+
+	peer.add<CURLOPT_URL>(RATE_URL.data());
+	peer.add<CURLOPT_FOLLOWLOCATION>(1L);
+	peer.add<CURLOPT_HTTPGET>(1L);
+	// HTTPS取得
+	try {
+		peer.perform();
+	} catch (curl_easy_exception &error) {
+		// エラー内容表示
+		std::cerr<<error.what()<<std::endl;
+		return false;
+	}
+	// 取得できたのでHTTPコードが200かどうかを確認
+	auto httpcode = peer.get_info<CURLINFO_RESPONSE_CODE>();
+	if(httpcode.get() != 200){
+		std::cout << "HTTP code error " << httpcode.get() << std::endl;
+		return false;
+	}
 	
-	if(!peer.getRequest(RATE_URL,"")){
-		cout << "request error" << endl;
-		return false;
-	}
-	unsigned long httpcode = peer.getLastResponceCode();
-	if(httpcode != 200){
-		printf("HTTP code Error %lu\n",httpcode);
-		return false;
-	}
 	// JSONでやってくるので解析
-	string responce = peer.getResponceString();
-	if(! parseJson(responce,jarray)){
+	picojson::array jarray;
+	if(! parseJson(stream.str(),jarray)){
 		return false;
 	}
 	
 	// テーブルなので、その中からUSDJPYを探す
-	picojson::array::reverse_iterator it;
-	
-	for(it=jarray.rbegin();it!=jarray.rend();it++){
+	for(auto it=jarray.rbegin();it!=jarray.rend();it++){
 		if(! it->is<picojson::object>()) continue;
 		
 		rateobj = it->get<picojson::object>();
@@ -113,11 +121,11 @@ bool readRate(picojson::object &rateobj)
 int main(int argc,char *argv[])
 {
 	picojson::object rate;
+
 	for(;;){
 		readRate(rate);
-		
 		// レート表示。ask=買い bid=売り
-		cout << "bid:" << rate["bid"].to_str() << " ask:" << rate["ask"].to_str() << endl;
+		std::cout << "bid:" << rate["bid"].to_str() << " ask:" << rate["ask"].to_str() << std::endl;
 		sleep(60);					// 60秒間待ち
 	}
 	
