@@ -1,8 +1,11 @@
 jpyrate
 =======
 
-為替レートをC++(use curl library)で簡単に取得するサンプルです
-
+為替レートをC++(use curl library)で簡単に取得するサンプルです  
+  
+[![CodeFactor](https://www.codefactor.io/repository/github/chromabox/jpyrate/badge)](https://www.codefactor.io/repository/github/chromabox/jpyrate)
+  
+  
 使い方
 ===============
 
