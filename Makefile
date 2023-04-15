@@ -31,14 +31,20 @@ else
 MAKEDIR   = mkdir -p
 endif
 
-## curlcpp Library  ###############################################
-LIB_CURLCPPNX_DIR   = ./lib/curlcppnx
-LIB_INCPATH  += -I$(LIB_CURLCPPNX_DIR)/include
+## target build dir
+BUILD_DIR	  = ./build
 
-CURLCPPNX_LIBDIR = $(LIB_CURLCPPNX_DIR)/build
-CURLCPPNX_LIB = $(CURLCPPNX_LIBDIR)/libcurlcppnx.a
-CURLCPPNX_LDPATH = -L$(CURLCPPNX_LIBDIR)
-CURLCPPNX_LDLINK = -l:libcurlcppnx.a -lcurl
+
+## curlcpp Library  ###############################################
+LIB_CURLCPP_DIR   = ./lib/curlcpp
+LIB_INCPATH  += -I$(LIB_CURLCPP_DIR)/include
+
+LIB_CURLCPP_BUILDDIR   = $(BUILD_DIR)/curlcpp
+
+CURLCPP_LIBDIR = $(LIB_CURLCPP_BUILDDIR)/src
+CURLCPP_LIB = $(CURLCPP_LIBDIR)/libcurlcpp.a
+CURLCPP_LDPATH = -L$(CURLCPP_LIBDIR)
+CURLCPP_LDLINK = -l:libcurlcpp.a -lcurl
 
 ## picojson Library  ###############################################
 PICOJSON_DIR	= ./lib/picojson
@@ -58,7 +64,6 @@ USER_INCPATH		= -I./include
 
 USER_CSRCS			= src/main.cpp
 
-TARGET_DIR	  = ./build
 
 # g++ cpp version(C++20)
 CPP_VERFLAG	  = -std=gnu++20
@@ -67,17 +72,14 @@ CPP_VERFLAG	  = -std=gnu++20
 ifeq ($(DEBUG_BUILD),0)
 CPP_DDEBUG = 
 CPP_OPTIMIZE = 2
-MAKE_FLAGS = "CURLCPPNX_DEBUG_BUILD=0"
 else
 CPP_DDEBUG = -DDEBUG
 CPP_OPTIMIZE = g
-MAKE_FLAGS = "CURLCPPNX_DEBUG_BUILD=1"
 endif
 
 ifeq ($(DEBUG_BUILD),2)
 CPP_DDEBUG = -DDEBUG
 CPP_OPTIMIZE = 0
-MAKE_FLAGS = "CURLCPPNX_DEBUG_BUILD=2"
 endif
 
 #######################################################
@@ -85,7 +87,7 @@ endif
 #######################################################
 
 ## build target definition #####################################
-OBJDIR = $(TARGET_DIR)
+OBJDIR = $(BUILD_DIR)
 
 INCLUDES = $(LIB_INCPATH) $(USER_INCPATH)
 C_SRCS = $(USER_CSRCS)
@@ -95,7 +97,7 @@ C_SRCS = $(USER_CSRCS)
 OBJS = $(addprefix $(OBJDIR)/, $(C_SRCS:%.cpp=%.o))
 DEPS = $(addprefix $(OBJDIR)/, $(C_SRCS:%.cpp=%.d)) 
 
-TARGET_EXE = $(TARGET_DIR)/$(TARGET)
+TARGET_EXE = $(BUILD_DIR)/$(TARGET)
 
 #######################################################
 ## Last tool options
@@ -111,10 +113,10 @@ CPPFLAGS  += $(INCLUDES)
 CPPFLAGS  += $(SYSDEFS)
 
 ## Linker options #######################################
-LDFLAGS  = $(CURLCPPNX_LDLINK)
+LDFLAGS  = $(CURLCPP_LDLINK)
 LDFLAGS  += -Wl,--build-id
 LDFLAGS  += $(USER_LDFLAGS)
-LDFLAGS  += $(CURLCPPNX_LDPATH)
+LDFLAGS  += $(CURLCPP_LDPATH)
 
 #######################################################
 ## make rules
@@ -129,8 +131,7 @@ all: viewenv $(TARGET_EXE) endmess
 clean: 
 	@echo clean objects...
 	@rm -rf $(TARGET_EXE)
-	@rm -rf $(TARGET_DIR)
-	- cd $(LIB_CURLCPPNX_DIR) ; $(MAKE) $(MAKE_FLAGS) clean
+	@rm -rf $(BUILD_DIR)
 	@echo done.
 
 # show enviromnt and compile options
@@ -156,12 +157,14 @@ endmess:
 	@echo 
 	@echo done.
 
-$(CURLCPPNX_LIB):
-	- cd $(LIB_CURLCPPNX_DIR) ; $(MAKE) $(MAKE_FLAGS) 
-
-$(TARGET_EXE): $(CURLCPPNX_LIB) $(OBJS) 
+$(CURLCPP_LIB):
+	-@$(MAKEDIR) $(LIB_CURLCPP_BUILDDIR)
+	cmake -S $(LIB_CURLCPP_DIR) -B $(LIB_CURLCPP_BUILDDIR)
+	cd $(LIB_CURLCPP_BUILDDIR) ; $(MAKE)
+	
+$(TARGET_EXE): $(CURLCPP_LIB) $(OBJS) 
 	@echo link: $@
-	@$(CPP) -o $@ $(CURLCPPNX_LIB) $(OBJS) $(LDFLAGS) 
+	@$(CPP) -o $@ $(CURLCPP_LIB) $(OBJS) $(LDFLAGS) 
 	@echo
 
 $(addprefix $(OBJDIR)/, %.o): %.cpp

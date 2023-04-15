@@ -2,6 +2,7 @@ jpyrate
 =======
 
 為替レートをC++(use curl library)で簡単に取得するサンプルです  
+curlcppのサンプルでもあります  
   
 [![CodeFactor](https://www.codefactor.io/repository/github/chromabox/jpyrate/badge)](https://www.codefactor.io/repository/github/chromabox/jpyrate)
   
@@ -16,12 +17,15 @@ jpyrateは以下のパッケージを使用しています。
 * g++
 * STL(libstdc++)
 * libcurl-dev (opensslでもnssでも何でもいい)
+* make
+* cmake (3．13以降。curlcppのビルドに必要)
 
 ので、あらかじめインストールしてください。
+vscodeがあると更に良いです  
 
 Ubuntuの場合は次のようにしたら良いかもしれません。
 ````
-$ sudo apt-get install g++ libstdc++6 libcurl4-openssl-dev
+$ sudo apt-get install g++ libstdc++6 libcurl4-openssl-dev cmake make
 ````
 あとは
 ````
@@ -59,7 +63,7 @@ Ctrl+Cで終わります。
 ===============
 
 Googleの為替レートAPIが利用できなくなっていた件
-http://8wired.jp/blog/1121
+https://8wired.jp/blog/1121
 
 
 謝辞
@@ -67,4 +71,4 @@ http://8wired.jp/blog/1121
 * picojsonのkazuho氏 (https://github.com/kazuho/picojson)  
 JSONの解析に使用しています。picojsonはSTLの親和性高くて便利です  
 * curlcppのJosephP91氏 (https://github.com/JosephP91/curlcpp)  
-httpsの取得に使用しています。これはcurlライブラリのc++ラッパであり扱いやすくなります。curlcppnxとして一部を変更して使用しています。
+httpsの取得に使用しています。これはcurlライブラリのc++ラッパであり扱いやすくなります。
