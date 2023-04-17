@@ -125,7 +125,7 @@ LDFLAGS  += $(CURLCPP_LDPATH)
 # disable gnumake auto remove object(.o)
 .SECONDARY: $(OBJS)
 
-all: viewenv $(TARGET_EXE) endmess
+all: viewenv build_curlcpp $(TARGET_EXE) endmess
 
 
 clean: 
@@ -157,7 +157,7 @@ endmess:
 	@echo 
 	@echo done.
 
-$(CURLCPP_LIB):
+build_curlcpp:
 	-@$(MAKEDIR) $(LIB_CURLCPP_BUILDDIR)
 	cmake -S $(LIB_CURLCPP_DIR) -B $(LIB_CURLCPP_BUILDDIR)
 	cd $(LIB_CURLCPP_BUILDDIR) ; $(MAKE)
