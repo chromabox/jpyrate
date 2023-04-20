@@ -10,7 +10,7 @@
             ],
             "includePath": [
                 "./include",
-                "./lib/curlcppnx/include",
+                "./lib/curlcpp/include",
                 "./lib/picojson"
             ],
             "cppStandard": "${default}",
