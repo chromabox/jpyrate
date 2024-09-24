@@ -45,11 +45,10 @@ using namespace std::literals::string_view_literals;
 
 
 // バージョン
-static std::string_view THIS_VERSION = "0.0.1"sv;
+static std::string_view THIS_VERSION = "0.0.2"sv;
 
-// レート取得用URL。外為オンラインのを使う
-static std::string_view RATE_URL ="https://www.gaitameonline.com/rateaj/getrate"sv;
-
+// レート取得用URL。GMOコインのPublic APIを使う
+static std::string_view RATE_URL = "https://forex-api.coin.z.com/public/v1/ticker"sv;
 // JSONの解析をする
 static bool parseJson(const string &src,picojson::array &jarray)
 {
@@ -68,11 +67,11 @@ static bool parseJson(const string &src,picojson::array &jarray)
 		return false;
 	}
 	picojson::object jobj = jsonval.get<picojson::object>();
-	if(! jobj["quotes"].is<picojson::array>()){
+	if(! jobj["data"].is<picojson::array>()){
 		std::cout << "[JSON] is not array... " << std::endl;
 		return false;
 	}
-	jarray = jobj["quotes"].get<picojson::array>();
+	jarray = jobj["data"].get<picojson::array>();
 	return true;
 }
 
@@ -107,14 +106,17 @@ static bool readRate(picojson::object &rateobj)
 		return false;
 	}
 	
-	// テーブルなので、その中からUSDJPYを探す
-	for(auto it=jarray.rbegin();it!=jarray.rend();it++){
-		if(! it->is<picojson::object>()) continue;
+	// テーブルなので、その中からUSD_JPYを探す
+	for(const auto &rate: jarray){
+		if(! rate.is<picojson::object>()) continue;
 		
-		rateobj = it->get<picojson::object>();
-		if(rateobj["currencyPairCode"].to_str() == "USDJPY") break;
+		rateobj = rate.get<picojson::object>();
+		if(rateobj["symbol"].to_str() == "USD_JPY"){
+			return true;
+		} 
 	}
-	return true;
+	std::cout << "ERROR: symbol USD_JPY not found." << std::endl;
+	return false;
 }
 
 
@@ -123,9 +125,10 @@ int main(int argc,char *argv[])
 	picojson::object rate;
 
 	for(;;){
-		readRate(rate);
-		// レート表示。ask=買い bid=売り
-		std::cout << "bid:" << rate["bid"].to_str() << " ask:" << rate["ask"].to_str() << std::endl;
+		if(readRate(rate)){
+			// レート表示。ask=買い bid=売り
+			std::cout << "bid:" << rate["bid"].to_str() << " ask:" << rate["ask"].to_str() << std::endl;
+		}
 		sleep(60);					// 60秒間待ち
 	}
 	
